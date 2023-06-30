@@ -91,14 +91,19 @@ const patchUsers = (req, res = response) => {
 const deleteUsers = async (req = request, res = response) => {
     try {
         const { id } = req.params;
+        console.log(id);
+        const uid = req.uid;
+
         // Fisicamente **No se debe hacer
         // const usuario = await User.findByIdAndDelete( id );
 
-        //Eliminación logica
         const usuario = await User.findByIdAndUpdate( id, { state: false } );
+        const userAuth = req.user;
+
         res.json({
             msg: `El usuario con ${id} ha sido eliminada exitosamente`,
             usuario,
+            userAuth
         })
     } catch (error) {
         

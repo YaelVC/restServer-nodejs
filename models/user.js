@@ -33,8 +33,10 @@ const userSchema = Schema({
 
 // Para quitar campos que no quiero mostrar
 userSchema.methods.toJSON = function () {
-    const { __v, password, ...user } = this.toObject();
+    const { __v, password, _id, ...user } = this.toObject();
+    user.uid = _id;
     return user;
 }
+
 
 module.exports = model( 'User', userSchema );
