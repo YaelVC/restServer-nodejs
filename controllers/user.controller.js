@@ -1,36 +1,84 @@
 const { response, request } = require('express');
+const bcryptjs = require('bcryptjs');
 
-const getUsers = (req, res = response) => {
-    res.status(200)
-    res.json({
-        msg: 'get -API - controlador'
-    })
+const User = require('../models/user');
+
+const getUsers = async (req, res = response) => {
+    try {
+        const { limit = 5, from = 0,  } = req.query;
+        const query = { state: true };
+      
+        const [total, usuarios] = await Promise.all([
+            User.countDocuments( query ),
+            User.find(query)
+                .skip( Number( from ) )
+                .limit( Number( limit ) )
+        ])
+        res.json({
+                total,
+                usuarios
+            })
+    } catch (error) {
+        res.json(error.message)   
+    }
 }
 
-const putUsers = (req,  res = response) => {
-    const { id } = req.params;
-    console.log(id);
-    res.status(202)
-    res.json({
-        msg: 'put - API- controlador'
-    })
+const putUsers = async(req, res = response) => {
+    try {
+        const { id } = req.params;
+        const { password, google, email,  ...resto } = req.body;
     
-};
-
-const postUsers = (req, res = response) => {
-    console.log(req.body);
-    const{ name, age } = req.body;
-    if (name) {
+        if( password ) {
+             // Encriptar la contraseña
+             const salt =  bcryptjs.genSaltSync();
+             resto.password = bcryptjs.hashSync( password, salt );
+        }
+    
+        const user = await User.findByIdAndUpdate( id, resto );
+     
         res.status(202)
         res.json({
-            msg: `post - API- controlador ${name}`
-        })
-    } else {
-        res.status(400)
-        res.json({
-            msg: 'No se envíaron los datos necesarios'
-        })
+            msg: 'put - API- controlador',
+            user
+        })        
+    } catch (error) {
+        console.log(error.message);
     }
+};
+
+const postUsers = async (req, res = response) => {
+    const { name, email, password, role } = req.body;
+    const user = new User( {name, email, password, role} );
+
+    try {
+        // Encriptar la contraseña
+        const salt =  bcryptjs.genSaltSync();
+        user.password = bcryptjs.hashSync( password, salt );
+
+        // Guardar el usuario en la bd
+        await user.save();
+
+        const { name } = req.body;
+        if (name) {
+            res.status(202)
+            res.json({
+                msg: `post - API- controlador ${name}`,
+                user
+            })
+        } else {
+            res.status(400)
+            res.json({
+                msg: 'No se envíaron los datos necesarios'
+            })
+        }
+
+    } catch (error) {
+        console.log(error.message);
+        res.status(400);
+        res.send(error.message);
+
+    }
+
 }
 
 const patchUsers = (req, res = response) => {
@@ -40,19 +88,22 @@ const patchUsers = (req, res = response) => {
     })
 }
 
-const deleteUsers = (req = request, res = response) => {
-    const { name } = req.params;
-    const { age, school } = req.query;
-    console.log(name);
-    console.log(age);
-    console.log(school);
+const deleteUsers = async (req = request, res = response) => {
+    try {
+        const { id } = req.params;
+        // Fisicamente **No se debe hacer
+        // const usuario = await User.findByIdAndDelete( id );
 
-    res.status(403)
-    res.json({
-        msg: `${name} ha sido eliminada exitosamente`,
-        age,
-        school
-    }) 
+        //Eliminación logica
+        const usuario = await User.findByIdAndUpdate( id, { state: false } );
+        res.json({
+            msg: `El usuario con ${id} ha sido eliminada exitosamente`,
+            usuario,
+        })
+    } catch (error) {
+        
+    }
+   
 }
 
 module.exports = {
