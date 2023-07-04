@@ -1,7 +1,7 @@
 const { response, request } = require('express');
 const bcryptjs = require('bcryptjs');
 
-const User = require('../models/user');
+const User = require('../models/user.model');
 
 const getUsers = async (req, res = response) => {
     try {
@@ -91,7 +91,6 @@ const patchUsers = (req, res = response) => {
 const deleteUsers = async (req = request, res = response) => {
     try {
         const { id } = req.params;
-        console.log(id);
         const uid = req.uid;
 
         // Fisicamente **No se debe hacer
